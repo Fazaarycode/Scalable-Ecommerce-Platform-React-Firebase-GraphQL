@@ -1,0 +1,12 @@
+specVersion: "v1beta"
+serviceId: "zimozi"
+location: "us-west1"
+schema:
+  source: "./schema"
+  datasource:
+    postgresql:
+      database: "zimozi"
+      cloudSql:
+        instanceId: "zimozi"
+      # schemaValidation: "COMPATIBLE"
+connectorDirs: ["./connector"]
