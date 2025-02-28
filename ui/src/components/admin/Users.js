@@ -88,7 +88,7 @@ export default function AdminUsers() {
               <tr>
                 <th>Email</th>
                 <th>Name</th>
-                <th>Role</th>
+                <th>Role2</th>
                 <th>Joined</th>
                 <th>Actions</th>
               </tr>

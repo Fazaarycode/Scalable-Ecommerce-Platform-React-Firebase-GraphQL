@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Button, TextField, Divider, Box, Typography, Container } from '@mui/material';
+import GoogleIcon from '@mui/icons-material/Google';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function Login() {
@@ -39,43 +41,85 @@ export default function Login() {
   }
 
   return (
-    <div className="login-container">
-      <h2>Login</h2>
-      {error && <div className="error-message">{error}</div>}
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label>Email</label>
-          <input
-            type="email"
+    <Container component="main" maxWidth="xs">
+      <Box
+        sx={{
+          marginTop: 8,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          padding: 3,
+          borderRadius: 2,
+          boxShadow: 1,
+          bgcolor: 'background.paper',
+        }}
+      >
+        <Typography component="h1" variant="h5" sx={{ mb: 3 }}>
+          Welcome back
+        </Typography>
+        
+        {error && (
+          <Typography color="error" sx={{ mb: 2 }}>
+            {error}
+          </Typography>
+        )}
+
+        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%' }}>
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            id="email"
+            label="Email Address"
+            name="email"
+            autoComplete="email"
+            autoFocus
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            required
           />
-        </div>
-        <div className="form-group">
-          <label>Password</label>
-          <input
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            name="password"
+            label="Password"
             type="password"
+            id="password"
+            autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            required
           />
-        </div>
-        <button type="submit" disabled={loading}>
-          Log In
-        </button>
-      </form>
-      <div className="divider">OR</div>
-      <button 
-        className="google-signin-button" 
-        onClick={handleGoogleSignIn}
-        disabled={loading}
-      >
-        Sign in with Google
-      </button>
-      <div className="signup-link">
-        Need an account? <Link to="/signup">Sign Up</Link>
-      </div>
-    </div>
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            sx={{ mt: 3, mb: 2 }}
+            disabled={loading}
+          >
+            Log In
+          </Button>
+          
+          <Divider sx={{ my: 2 }}>OR</Divider>
+          
+          <Button
+            fullWidth
+            variant="outlined"
+            startIcon={<GoogleIcon />}
+            onClick={handleGoogleSignIn}
+            disabled={loading}
+            sx={{ mb: 2 }}
+          >
+            Sign in with Google
+          </Button>
+
+          <Typography variant="body2" align="center" sx={{ mt: 2 }}>
+            Need an account?{' '}
+            <Link to="/signup" style={{ color: 'primary.main', textDecoration: 'none' }}>
+              Sign Up
+            </Link>
+          </Typography>
+        </Box>
+      </Box>
+    </Container>
   );
 } 

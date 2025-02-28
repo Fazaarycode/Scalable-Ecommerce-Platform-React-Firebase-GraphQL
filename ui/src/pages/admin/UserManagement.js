@@ -46,7 +46,7 @@ export default function UserManagement() {
   const handleRoleChange = async (userId, newRole) => {
     try {
       setLoading(true);
-      await api.updateUserRole(userId, newRole);
+      await api.updateUserRole(userId, newRole.toUpperCase());
       fetchUsers();
     } catch (error) {
       console.error('Error updating user role:', error);

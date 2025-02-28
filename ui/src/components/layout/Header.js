@@ -1,8 +1,9 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { AppBar, Toolbar, Button, Typography, IconButton, Badge } from '@mui/material';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
-import './Header.css';
 
 export default function Header() {
   const { currentUser, logout, isAdmin } = useAuth();
@@ -19,60 +20,44 @@ export default function Header() {
   };
 
   return (
-    <header className="header">
-      <div className="container">
-        <div className="header-content">
-          <div className="logo">
-            <Link to="/">Zimozi E-Commerce</Link>
-          </div>
-          
-          <nav className="nav">
-            <ul className="nav-list">
-              <li className="nav-item">
-                <Link to="/" className="nav-link">Home</Link>
-              </li>
-              
-              {currentUser ? (
-                <>
-                  <li className="nav-item">
-                    <Link to="/profile" className="nav-link">Profile</Link>
-                  </li>
-                  
-                  {isAdmin && (
-                    <li className="nav-item">
-                      <Link to="/admin" className="nav-link">Admin</Link>
-                    </li>
-                  )}
-                  
-                  <li className="nav-item">
-                    <button onClick={handleLogout} className="nav-link btn-link">
-                      Logout
-                    </button>
-                  </li>
-                </>
-              ) : (
-                <>
-                  <li className="nav-item">
-                    <Link to="/login" className="nav-link">Login</Link>
-                  </li>
-                  <li className="nav-item">
-                    <Link to="/signup" className="nav-link">Sign Up</Link>
-                  </li>
-                </>
-              )}
-              
-              <li className="nav-item cart-icon">
-                <Link to="/cart" className="nav-link">
-                  Cart
-                  {currentUser && (
-                    <span className="cart-count">{getCartItemCount()}</span>
-                  )}
-                </Link>
-              </li>
-            </ul>
-          </nav>
-        </div>
-      </div>
-    </header>
+    <AppBar position="static" color="inherit" elevation={0}>
+      <Toolbar>
+        <Typography variant="h6" component={Link} to="/" sx={{ flexGrow: 1, textDecoration: 'none', color: 'inherit' }}>
+          Zimozi E-Commerce
+        </Typography>
+        <Button color="inherit" component={Link} to="/">
+          Home
+        </Button>
+        {currentUser ? (
+          <>
+            <Button color="inherit" component={Link} to="/profile">
+              Profile
+            </Button>
+            {isAdmin && (
+              <Button color="inherit" component={Link} to="/admin">
+                Admin
+              </Button>
+            )}
+            <Button color="inherit" onClick={handleLogout}>
+              Logout
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button color="inherit" component={Link} to="/login">
+              Login
+            </Button>
+            <Button color="inherit" component={Link} to="/signup">
+              Sign Up
+            </Button>
+          </>
+        )}
+        <IconButton component={Link} to="/cart" color="inherit">
+          <Badge badgeContent={currentUser ? getCartItemCount() : 0} color="secondary">
+            <ShoppingCartIcon />
+          </Badge>
+        </IconButton>
+      </Toolbar>
+    </AppBar>
   );
-} 
+}

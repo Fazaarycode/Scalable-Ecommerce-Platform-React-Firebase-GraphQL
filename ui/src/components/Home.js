@@ -39,10 +39,6 @@ export default function Home() {
         <div className="cta-section">
           <h2>Join Our Community</h2>
           <p>Sign up to get exclusive offers and discounts</p>
-          <div className="cta-buttons">
-            <Link to="/signup" className="signup-btn">Sign Up</Link>
-            <Link to="/login" className="login-btn">Login</Link>
-          </div>
         </div>
       )}
     </div>
