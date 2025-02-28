@@ -1,16 +1,23 @@
 // @ts-nocheck
-const { initializeApp, cert, applicationDefault  } = require('firebase-admin/app');
+const { initializeApp, cert, applicationDefault } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 const logger = require('../utils/logger');
 const { faker } = require('@faker-js/faker');
+const admin = require('firebase-admin');
 
 let app;
 try {
-  app = initializeApp({
-    credential: process.env.FIREBASE_CONFIG 
-      ? applicationDefault ()
-      : cert(require('../../sa.json')),
-  });
+  // For production deployment
+  if (process.env.FUNCTIONS_EMULATOR) {
+    // Local development with emulator
+    app = initializeApp({
+      credential: cert(require('../../sa.json')),
+    });
+  } else {
+    // Production environment
+    app = initializeApp();  // Firebase will handle credentials automatically
+  }
+  
   logger.info('Firebase app initialized successfully');
 } catch (error) {
   logger.error({ err: error }, 'Error initializing Firebase app');
@@ -107,8 +114,8 @@ async function initializeDatabase() {
   }
 }
 
-// Auto-initialize database when in emulator mode
-if (process.env.FIREBASE_CONFIG) {
+// Only initialize database if we're in emulator mode
+if (process.env.FUNCTIONS_EMULATOR) {
   logger.info('Attempting to initialize emulator database...');
   initializeDatabase()
     .then(() => logger.info('✅ Database initialized in emulator mode'))
@@ -118,8 +125,27 @@ if (process.env.FIREBASE_CONFIG) {
     });
 }
 
+if (!admin.apps.length) {
+  console.log('Initializing Firebase Admin...');
+  try {
+    admin.initializeApp({
+      credential: admin.credential.applicationDefault()
+    });
+    console.log('Firebase Admin initialized successfully');
+  } catch (error) {
+    console.error('Error initializing Firebase Admin:', error);
+    throw error;
+  }
+}
+
+const adminDb = admin.firestore();
+console.log('Firestore instance created');
+
 module.exports = { 
   app, 
   db,
-  initializeDatabase 
+  initializeDatabase,
+  admin,
+  adminDb,
+  auth: admin.auth()
 };

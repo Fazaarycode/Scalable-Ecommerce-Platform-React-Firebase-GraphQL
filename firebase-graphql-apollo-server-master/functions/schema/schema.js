@@ -16,6 +16,8 @@ const typeDefs = gql`
     price: Float!
     image: String
     category: String!
+    inStock: Boolean
+    discount: Float
     createdAt: String
     updatedAt: String
   }
@@ -34,12 +36,43 @@ const typeDefs = gql`
   type Cart {
     id: ID!
     userId: String!
-    products: [Product!]!
+    items: [CartItem]
+    products: [Product]!
     total: Float!
+    cartCount: Int
+  }
+
+  type CartItem {
+    productId: ID!
+    quantity: Int!
+    userId: String
+  }
+
+  input ProductFilterInput {
+    category: String
+    minPrice: Float
+    maxPrice: Float
+    inStock: Boolean
+  }
+
+  type User {
+    id: ID!
+    email: String!
+    role: String!
+    createdAt: String
+    lastSignIn: String
+  }
+
+  type UserClaims {
+    admin: Boolean
+    customClaims: String  # This will hold JSON stringified claims
   }
 
   type Query {
-    products: [Product!]!
+    users: [User]!
+    currentUser: User
+    getUserClaims(userId: ID!): UserClaims
+    products(filter: ProductFilterInput): [Product!]!
     product(id: ID!): Product
     orders: [Order!]!
     order(id: ID!): Order
@@ -56,6 +89,8 @@ const typeDefs = gql`
     price: Float!
     image: String
     category: String!
+    inStock: Boolean
+    discount: Float
   }
 
   input ShippingAddressInput {
@@ -67,6 +102,8 @@ const typeDefs = gql`
   }
 
   type Mutation {
+    setUserRole(userId: ID!, role: String!): User!
+    updateUserRole(userId: ID!, role: String!): User!
     addProduct(input: ProductInput!): Product!
     createProduct(
       name: String!

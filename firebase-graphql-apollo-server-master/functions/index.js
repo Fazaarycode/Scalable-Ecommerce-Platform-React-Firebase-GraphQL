@@ -1,66 +1,79 @@
 // @ts-nocheck
 const functions = require("firebase-functions");
 const express = require("express");
-const seedRoute = require('./routes/seedRoute');
-const { seedDatabase } = require('./seeders/databaseSeeder');
-const logger = require('./utils/logger');
-const { makeExecutableSchema } = require('@graphql-tools/schema');
+const cors = require('cors');
 const { ApolloServer } = require('@apollo/server');
 const { expressMiddleware } = require('@apollo/server/express4');
-const { ApolloServerPluginDrainHttpServer } = require('@apollo/server/plugin/drainHttpServer');
 const { ApolloServerPluginLandingPageLocalDefault } = require('@apollo/server/plugin/landingPage/default');
-const http = require('http');
+const logger = require('./utils/logger');
+const admin = require('./database/database');
 
-const { db, initializeDatabase } = require('./database/database');
-
-// Construct a schema, using GraphQL schema language
+// Import schema and resolvers
 const typeDefs = require("./schema/schema");
-
-// Provide resolver functions for your schema fields
 const resolvers = require("./resolvers");
 
-// Validate schema and resolvers match
-try {
-  makeExecutableSchema({
-    typeDefs,
-    resolvers,
-    resolverValidationOptions: {
-      requireResolversForArgs: true,
-      requireResolversForNonScalar: true,
-    }
-  });
-  logger.info('Schema validation passed');
-} catch (error) {
-  logger.error({ err: error }, 'Schema validation failed');
-  throw error;
-}
+// Import database (already initialized in the module)
+const { db } = require('./database/database');
 
+// Create an Express app
 const app = express();
 
-// Initialize app without IIFE
-const initializeApp = async () => {
-  try {
-    // Create HTTP server
-    const httpServer = http.createServer(app);
-    
-    // Create Apollo Server
-    const server = new ApolloServer({
+// Create a separate router for handling OPTIONS preflight requests
+const preflightRouter = express.Router();
+preflightRouter.options('*', (req, res) => {
+  // Set CORS headers
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Apollo-Require-Preflight');
+  res.set('Access-Control-Max-Age', '3600');
+  res.status(204).send('');
+});
+
+// Use the preflight router first
+app.use(preflightRouter);
+
+// Enable CORS for all routes
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Apollo-Require-Preflight'],
+  credentials: true
+}));
+
+// Create Apollo Server
+let server;
+let serverInitialized = false;
+
+const initializeServer = async () => {
+  if (!serverInitialized) {
+    server = new ApolloServer({
       typeDefs,
       resolvers,
+      context: async ({ req }) => {
+        // Get the user token from the headers
+        const token = req.headers.authorization || '';
+        
+        try {
+          // Verify the token and get user info
+          const decodedToken = await admin.auth().verifyIdToken(token);
+          return { userId: decodedToken.uid };
+        } catch (error) {
+          console.error('Error verifying token:', error);
+          return { userId: null };
+        }
+      },
       introspection: true,
       plugins: [
-        ApolloServerPluginDrainHttpServer({ httpServer }),
         ApolloServerPluginLandingPageLocalDefault({ 
           embed: true,
           includeCookies: true 
         }),
       ],
     });
-
-    // Start Apollo Server
+    
     await server.start();
     
-    // IMPORTANT: Make sure the root path displays the GraphQL UI
+    // Apply Apollo middleware
     app.use(
       '/',
       express.json(),
@@ -68,25 +81,35 @@ const initializeApp = async () => {
         context: async ({ req }) => ({ token: req.headers.token }),
       }),
     );
-
+    
     // Add health check endpoint
     app.get('/health', (req, res) => {
       res.status(200).json({ status: 'ok' });
     });
-
+    
+    serverInitialized = true;
     logger.info('Apollo Server initialized successfully');
-    return app;
-  } catch (error) {
-    logger.error('Failed to initialize app:', error);
-    throw error;
   }
+  
+  return app;
 };
 
-// Export the Firebase Function
+// Export the Firebase Function with special handling for OPTIONS
 exports.graphql = functions.https.onRequest(async (req, res) => {
+  // Special handling for OPTIONS requests
+  if (req.method === 'OPTIONS') {
+    // Set CORS headers
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Apollo-Require-Preflight');
+    res.set('Access-Control-Max-Age', '3600');
+    res.status(204).send('');
+    return;
+  }
+  
   try {
-    const initializedApp = await initializeApp();
-    return initializedApp(req, res);
+    const appInstance = await initializeServer();
+    return appInstance(req, res);
   } catch (error) {
     logger.error('Error handling request:', error);
     res.status(500).json({ error: 'Internal server error' });

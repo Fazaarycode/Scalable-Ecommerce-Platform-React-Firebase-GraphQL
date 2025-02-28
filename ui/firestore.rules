@@ -1,0 +1,14 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isProtectedUser() {
+      return request.auth.uid == "wigvTShrrdgWKsWqDuMajAGgaNU2";
+    }
+
+    // Protect all collections
+    match /{document=**} {
+      allow read: true;  // or whatever your read rules are
+      allow write: !isProtectedUser();
+    }
+  }
+} 

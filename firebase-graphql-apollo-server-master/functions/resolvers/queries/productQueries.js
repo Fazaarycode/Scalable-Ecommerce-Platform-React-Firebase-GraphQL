@@ -1,39 +1,47 @@
 // @ts-nocheck
-const admin = require("../../database/database");
+const { db } = require("../../database/database");
 
 const productQueries = {
-  products: async (_, { category, minPrice, maxPrice, inStock }) => {
-    const productsRef = admin.database().ref("products");
-    const snapshot = await productsRef.once("value");
-    let products = [];
-    
-    snapshot.forEach((child) => {
-      products.push({ id: child.key, ...child.val() });
-    });
-
-    // Apply filters
-    if (category) {
-      products = products.filter(product => product.category === category);
+  products: async (_, { filter }) => {
+    try {
+      const productsSnapshot = await db.collection('products').get();
+      let products = productsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      
+      // Apply filters if provided
+      if (filter) {
+        if (filter.category) {
+          products = products.filter(product => product.category === filter.category);
+        }
+        if (filter.minPrice) {
+          products = products.filter(product => product.price >= filter.minPrice);
+        }
+        if (filter.maxPrice) {
+          products = products.filter(product => product.price <= filter.maxPrice);
+        }
+        if (filter.inStock !== undefined) {
+          products = products.filter(product => product.inStock === filter.inStock);
+        }
+      }
+      
+      return products;
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      return [];
     }
-    if (minPrice) {
-      products = products.filter(product => product.price >= minPrice);
-    }
-    if (maxPrice) {
-      products = products.filter(product => product.price <= maxPrice);
-    }
-    if (inStock !== undefined) {
-      products = products.filter(product => product.inStock === inStock);
-    }
-
-    return products;
   },
 
   product: async (_, { id }) => {
-    const snapshot = await admin
-      .database()
-      .ref(`products/${id}`)
-      .once("value");
-    return { id: snapshot.key, ...snapshot.val() };
+    try {
+      const doc = await db.collection('products').doc(id).get();
+      if (!doc.exists) return null;
+      return { id: doc.id, ...doc.data() };
+    } catch (error) {
+      console.error('Error fetching product:', error);
+      return null;
+    }
   }
 };
 
