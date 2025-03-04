@@ -94,3 +94,5 @@ Submission Guidelines
 • Chosen technologies & reasons.
 • System design (diagrams if possible).
 • Performance optimizations.
+
+Moving the project to Public as there is no response from evaluating team.
